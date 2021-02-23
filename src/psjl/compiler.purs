@@ -65,10 +65,6 @@ instance compileAnn :: Compile Ann where
   compile_ (Ann ann) =
     ""
 instance compileBind :: (Compile a) => Compile (Bind a) where
-  --(NonRec (Ident "Point") (Constructor (ProperName "Point") (ProperName "Point") [(Ident "value0")]))
-  --compile_ (NonRec a i (Constructor a1 t c fs)) =
-  --  String.joinWith " " $ Array.filter compileFilter [ compile_ a, compile_ e ]
-
   compile_ (NonRec a i e) =
     case e of
       Constructor a1 t c fs -> String.joinWith " " $ Array.filter compileFilter [ compile_ a, compile_ (Constructor a1 t c fs) ]
@@ -120,16 +116,11 @@ instance compileCaseAlternative :: Compile a => Compile (CaseAlternative a) wher
   compile_ (CaseAlternative { caseAlternativeBinders, caseAlternativeResult }) =
     compile_ caseAlternativeBinders <> "\n" <> compile_ caseAlternativeResult
 
-    --formatError "(CaseAlternative { caseAlternativeBinders, caseAlternativeResult })"
-
 instance compileBinder :: Compile a => Compile (Binder a) where
   compile_ (NullBinder a) =
     "else"
-    --compile_ a
-    --formatError "(NullBinder a)"
   compile_ (LiteralBinder a ls) =
     "elseif #value; == " <> compile_ ls
-    --formatError "(LiteralBinder a ls)"
   compile_ (VarBinder a i) =
     formatError "(VarBinder a i)"
   compile_ (ConstructorBinder a t c bs) =
