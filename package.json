@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "file-system": "^2.2.2",
+    "spago": "^0.18.1"
+  },
+  "scripts": {
+    "compile": "rm jl/corefn.jl || rm ps/corefn.json || cd ../ps || yarn spago build || cp output/Main/corefn.json ../psjl/ps || cd ../psjl/ || yarn spago run"
+  }
+}
