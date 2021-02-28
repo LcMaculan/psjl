@@ -45,7 +45,7 @@ instance compileProperName :: Compile ProperName where
 
 instance compileQualified :: Compile a => Compile (Qualified a) where
   compile_ (Qualified m a) =
-    String.joinWith "." $ Array.filter compileFilter [{-(compile_ m), <> -}(compile_ a)]
+    String.joinWith "." $ Array.filter compileFilter [ compile_ m, compile_ a ]
 
 instance compileIndent :: Compile Ident where
   compile_ (Ident x) = x
@@ -64,6 +64,7 @@ instance compileFilePath :: Compile FilePath where
 instance compileAnn :: Compile Ann where
   compile_ (Ann ann) =
     ""
+
 instance compileBind :: (Compile a) => Compile (Bind a) where
   compile_ (NonRec a i e) =
     case e of
@@ -182,12 +183,16 @@ compileModule module_ =
       compile_ $ (\x -> getModuleComments x) module_.module
     moduleNameSection =
       compile_ $ (\x -> getModuleName x) module_.module
-    importSection =
-      replaceSepartor (compile_ $ (\x -> getModuleImports x) module_.module) ", "
+
+    splittedImport = String.split (String.Pattern "&sep;") (compile_ $ (\x -> getModuleImports x) module_.module)
+    importSection = String.joinWith "\n" $
+        map (\x -> if x == "Prim" then "using " <> x else "include(\"../" <> x <> "/corefn.jl\")") $ Array.filter (\x -> (not (x == "")) && (not (x == "Prim"))) splittedImport
+
     exportSection =
       replaceSepartor (compile_ $ (\x -> getModuleExports x) module_.module) ", "
-    foreignSection =
-      compile_ $ (\x -> getModuleForeign x) module_.module
+
+    splittedForeign = String.split (String.Pattern "&sep;") (compile_ $ (\x -> getModuleForeign x) module_.module)
+    foreignSection = String.joinWith ", " $ map (\x -> moduleNameSection <> "." <> x) $ Array.filter (\x -> not (x == "")) splittedForeign
   in
     String.joinWith ""
     [ "# ", (show ((\x -> getModuleDecls x) module_.module)), "\n"
@@ -195,9 +200,9 @@ compileModule module_ =
     , "# path ", pathSection, "\n"
     , commentSection
     , attachSection moduleNameSection "module  " "\n"
-    , attachSection importSection "# import " "\n"
+    , attachSection importSection "" "\n"
+    , attachSection foreignSection "import " "\n"
     , attachSection exportSection "export " "\n"
-    , attachSection foreignSection "foreign " "\n"
     , replaceSepartor (compile_ $ (\x -> getModuleDecls x) module_.module) "\n", "\n"
     , "end"
     ]
